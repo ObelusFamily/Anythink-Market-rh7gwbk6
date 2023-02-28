@@ -29,11 +29,6 @@ const ItemPreview = (props) => {
     }
   };
 
-   function validateImage(img){
-    if(!img || img === undefined || img === ""){
-      return "placeholder.png"
-    }
-  }
 
   return (
     <div
@@ -44,7 +39,7 @@ const ItemPreview = (props) => {
       <img
         alt="item"
         src={
-          validateImage(item.image)
+          item.image || "placeholder.png"
         }
         className="card-img-top item-img"
         style={{ borderRadius: "20px" }}
