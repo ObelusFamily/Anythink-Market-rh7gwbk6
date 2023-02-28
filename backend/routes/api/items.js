@@ -6,6 +6,10 @@ var User = mongoose.model("User");
 var auth = require("../auth");
 const { sendEvent } = require("../../lib/event");
 
+import axios from 'axios';
+
+require('dotenv').config()
+
 // Preload item objects on routes with ':item'
 router.param("item", function(req, res, next, slug) {
   Item.findOne({ slug: slug })
@@ -137,14 +141,47 @@ router.get("/feed", auth.required, function(req, res, next) {
   });
 });
 
-router.post("/", auth.required, function(req, res, next) {
+router.post("/", auth.required, async function(req, res, next) {
   User.findById(req.payload.id)
     .then(function(user) {
       if (!user) {
         return res.sendStatus(401);
       }
 
-      var item = new Item(req.body.item);
+
+      const title = req.body.title;
+      const description = req.body.description;
+      var image = req.body.image;
+      const tagList = req.body.tagList;
+
+      // mycustom code goes here
+
+      const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+
+      if(image == ""){
+        axios.post('https://api.openai.com/v1/images/generations', { 
+          "prompt": title,
+          "n": 1,
+          "size": "256x256"
+         }, {
+          headers: {
+            "Authorization": "Bearer " + OPENAI_API_KEY ,
+            'content-type': 'application/json'
+          }
+        }).then(
+            function(response){
+              image = response["data"][0]["url"]
+              console.log(image)
+              console.log(response)
+            }
+        );
+      }
+
+
+
+      var item = new Item({
+        title, description, image, tagList
+      });
 
       item.seller = user;
 
