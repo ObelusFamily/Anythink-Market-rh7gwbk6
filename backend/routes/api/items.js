@@ -6,11 +6,6 @@ var User = mongoose.model("User");
 var auth = require("../auth");
 const { sendEvent } = require("../../lib/event");
 
-var axios = require("axios");
-const { json } = require("body-parser");
-
-require('dotenv').config()
-
 // Preload item objects on routes with ':item'
 router.param("item", function(req, res, next, slug) {
   Item.findOne({ slug: slug })
@@ -142,83 +137,21 @@ router.get("/feed", auth.required, function(req, res, next) {
   });
 });
 
-router.post("/", auth.required, async function(req, res, next) {
+router.post("/", auth.required, function(req, res, next) {
   User.findById(req.payload.id)
     .then(function(user) {
       if (!user) {
         return res.sendStatus(401);
       }
 
+      var item = new Item(req.body.item);
 
-      let {
-        title, description, image, tagList
-      } = req.body.item
+      item.seller = user;
 
-      // mycustom code goes here
-
-      const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
-
-      
-        if(image == undefined || image == ""){
-
-          url = "https://api.openai.com/v1/images/generations"
-
-          const headers = {
-            "Authorization": "Bearer " + OPENAI_API_KEY ,
-            "Content-Type": "application/json"
-          }
-
-          const data = {
-            "prompt": title,
-            "n": 1,
-            "size": "256x256"
-          }
-
-          axios.post(
-            url,
-            data, {
-              headers
-            }
-          ).then(response => {
-            let generatedImage = response.data['data'][0]['url']
-            console.log("here", generatedImage)
-            image = generatedImage
-
-            var item = new Item({
-              title, description, image, tagList
-            });
-      
-            item.seller = user;
-      
-            return item.save().then(function() {
-              sendEvent('item_created', { item: req.body.item })
-              return res.json({ item: item.toJSONFor(user) });
-            });
-            
-
-          })
-          .catch(error => {
-            console.error(error);
-          });
-          
-        }
-
-        else {
-
-          var item = new Item({
-            title, description, image, tagList
-          });
-    
-          item.seller = user;
-    
-          return item.save().then(function() {
-            sendEvent('item_created', { item: req.body.item })
-            return res.json({ item: item.toJSONFor(user) });
-          });
-
-        }
-
-   
+      return item.save().then(function() {
+        sendEvent('item_created', { item: req.body.item })
+        return res.json({ item: item.toJSONFor(user) });
+      });
     })
     .catch(next);
 });
