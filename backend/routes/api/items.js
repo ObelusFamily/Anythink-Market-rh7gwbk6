@@ -5,6 +5,7 @@ var Comment = mongoose.model("Comment");
 var User = mongoose.model("User");
 var auth = require("../auth");
 const { sendEvent } = require("../../lib/event");
+const { default: ItemPreview } = require("../../../frontend/src/components/ItemPreview");
 
 // Preload item objects on routes with ':item'
 router.param("item", function(req, res, next, slug) {
@@ -144,7 +145,13 @@ router.post("/", auth.required, function(req, res, next) {
         return res.sendStatus(401);
       }
 
+
       var item = new Item(req.body.item);
+
+      // fix for the BackendBug001
+      if(item.image === undefined || item.image == ""){
+        item.image = "placeholder.png";
+      }
 
       item.seller = user;
 
